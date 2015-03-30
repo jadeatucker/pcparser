@@ -66,8 +66,8 @@ int _pcparse(stringstream &tokens, int min_prec) {
 
 	// while we have a binary operator with precedence >= current precedence
 	while (tokens >> token) {
-		if (OPS[token[0]] && OPS[token[0]] >= min_prec) {
-			next_prec = OPS.at(token[0]);
+		next_prec = OPS[token[0]];
+		if (next_prec >= min_prec) {
 			if (token == "^") // ^ operator is right associative
 				next_prec++;
 
@@ -91,7 +91,7 @@ int pcparse(std::string expr) {
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::string expr = "100 / 20 + 1";
+	std::string expr = "( 9 - 8 ) - 7";
 
 	init();
 	
