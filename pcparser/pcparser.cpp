@@ -1,6 +1,8 @@
 // pcparser.cpp : Defines the entry point for the console application.
 //
 // Simple expression parser using prcedence climbing approach.
+//
+// TODO - Add support for unary operators
 
 #include "stdafx.h"
 
@@ -14,7 +16,7 @@ using namespace std;
 int _pcparse(stringstream &tokens, int min_prec);
 
 // Map of operator precedence
-std::map<char, int> OPS;
+map<char, int> OPS;
 
 void init() {
 	OPS['+'] = 1;
@@ -24,20 +26,20 @@ void init() {
 	OPS['^'] = 3;
 }
 
-int compute(std::string op, int a, int b) {
-	switch (op[0]) {
-		case '+': return a + b;
-		case '-': return a - b;
-		case '*': return a * b;
-		case '/': return a / b;
-		case '^': return pow(a, b);
-		default:
-			throw std::invalid_argument("invalid operator");
+int compute(char op, int a, int b) {
+	switch (op) {
+	case '+': return a + b;
+	case '-': return a - b;
+	case '*': return a * b;
+	case '/': return a / b;
+	case '^': return pow(a, b);
+	default:
+		throw invalid_argument("invalid operator");
 	}
 }
 
 int parse_primary(stringstream &tokens) {
-	std::string token;
+	string token;
 
 	if (tokens >> token) {
 		if (token == "(") {
@@ -45,21 +47,21 @@ int parse_primary(stringstream &tokens) {
 			tokens >> token; // eat closing paren
 
 			if (token != ")") {
-				throw std::exception("unmatched '('");	
+				throw exception("unmatched '('");
 			}
 			return val;
 		}
 		else {
-			return std::stoi(token); // parse int
+			return stoi(token); // parse int
 		}
 	}
 	else {
-		throw std::exception("stream ended unexpectedly");
+		throw exception("stream ended unexpectedly");
 	}
 }
 
 int _pcparse(stringstream &tokens, int min_prec) {
-	std::string token;
+	string token;
 	int lhs, rhs, next_prec;
 
 	lhs = parse_primary(tokens);
@@ -72,37 +74,64 @@ int _pcparse(stringstream &tokens, int min_prec) {
 				next_prec++;
 
 			rhs = _pcparse(tokens, next_prec);  // parse right hand side
-			lhs = compute(token, lhs, rhs);  // evaluate the operation
+			lhs = compute(token[0], lhs, rhs);  // evaluate the operation
 		}
 		else {
 			// next token has lower prcedence or is close paren so put it back and return.
-			tokens.putback(token[0]); 
+			tokens.putback(token[0]);
 			break;
 		}
 	}
-
 	return lhs;
 }
 
-int pcparse(std::string expr) {
+int pcparse(string expr) {
 	stringstream stream(expr);
 	return _pcparse(stream, 1);  // main parse function, default precedence 1
 }
 
+struct test {
+	std::string expr;
+	int val;
+};
+
+struct test TESTS[] = {
+	{ "( 9 - 8 ) - 7", -6 },
+	{ "6 * 7 + 4", 46 },
+	{ "4 ^ 2 - 8", 8 },
+	{ "11 * 2 - 8 / 2", 28 },
+	{ "1 + 14 - ( 8 * 2 )", -1 },
+	{ "- 8", -8 },  // test fails, pending unary operator support
+};
+#define TESTS_LEN (sizeof(TESTS) / sizeof(struct test))
+
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::string expr = "( 9 - 8 ) - 7";
-
 	init();
-	
-	try {
-		cout << "Expression: " << expr << endl;
-		cout << "Output: " << pcparse(expr) << endl;
+
+	int n, pass = 0;
+	struct test t;
+	for (int i = 0; i < TESTS_LEN; i++) {
+		t = TESTS[i];
+		try {
+			if ((n = pcparse(t.expr)) != t.val) {
+				cout << "FAIL: expected " << t.val << " but got " << n;
+				cout << " for expression: '" << t.expr << "'" << endl;
+			}
+			else {
+				pass++;
+			}
+		}
+		catch (exception e) {
+			cerr << "ERROR: '" << e.what() << "' for expression: '" << t.expr << "'" << endl;
+		}
 	}
-	catch (const std::exception e) {
-		cerr << "Error: " << e.what() << endl;
-		return 1;
+
+	if (pass != TESTS_LEN) {
+		cout << (TESTS_LEN - pass) << " of " << TESTS_LEN << " tests FAILED!" << endl;
 	}
-	
+	else {
+		cout << "TESTS PASS!" << endl;
+	}
 	return 0;
 }
