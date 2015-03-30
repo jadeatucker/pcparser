@@ -51,6 +51,9 @@ int parse_primary(stringstream &tokens) {
 			}
 			return val;
 		}
+		else if (token == "-") {
+			return -(parse_primary(tokens));  // handle unary negation
+		}
 		else {
 			return stoi(token); // parse int
 		}
@@ -101,7 +104,9 @@ struct test TESTS[] = {
 	{ "4 ^ 2 - 8", 8 },
 	{ "11 * 2 - 8 / 2", 18 },
 	{ "1 + 14 - ( 8 * 2 )", -1 },
-	{ "- 8", -8 },  // test fails, pending unary operator support
+	{ "- 8", -8 },
+	{ "- ( 8 * 7 ) + 2",  -54},
+	{ "2 * - ( 2 + 4 )",  -12},
 };
 #define TESTS_LEN (sizeof(TESTS) / sizeof(struct test))
 
